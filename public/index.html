@@ -54,6 +54,7 @@
   var gamma=0;
 
   var hasPlayed = false;
+  var cube;
 
 
   window.addEventListener('click', fullscreen, false);
@@ -169,19 +170,32 @@
     scene = new THREE.Scene();
     scene.add(camera);
     camera.add(movieScreen);
-    movieScreen.position.set(0,0,-200);
+    movieScreen.position.set(0,0,-400);
+
+    var geometry = new THREE.BoxGeometry( 10, 10, 10 );
+    var material = new THREE.MeshLambertMaterial( {color: 0x88ff00} );
+    cube = new THREE.Mesh( geometry, material );
+
+    scene.add( cube );
+    cube.position.set(0,0,-100);
+    var light = new THREE.PointLight( 0xffffff );
+    light.position.set( 0, 10, 200 );
+    scene.add( light );
+
+
 
     animate ();
   }
 
 
   function animate() {
-    camera.rotation.set(alpha* (Math.PI/180),beta* (Math.PI/180),gamma* (Math.PI/180));
+    camera.rotation.set(-beta* (Math.PI/180),-gamma* (Math.PI/180),0);
     requestAnimationFrame( animate );
-
+    cube.rotateX(.01);
+    cube.rotateY(.01);
+    cube.rotateZ(.01);
     update();
     render();
-
   }
 
 
