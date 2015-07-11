@@ -6,25 +6,11 @@
   <title>mask_template</title>
   <link rel="stylesheet" type="text/css" href="css/style.css">
 
-  <style>
-
-  #render-canvas {
-    -webkit-filter: hue-rotate(180deg) saturate(8);;
-    filter: hue-rotate(180deg) saturate(8);
-  }
-
-  </style>
 </head>
 <body>
 <script type="text/javascript" src="js/three.min.js"></script>
 
 <div id="render-canvas" style="border:none">
-
-  <audio id="audio" src="/audio/treefingers.mp3" type="audio/mpeg"> </audio>
-  <audio id="vo" src="/audio/nick-tommy-fullTrack.mp3" type="audio/mpeg"> </audio>
-
-
-  <img id= "nickPhoto" src="/images/nick-edit.png" height="200" width="200" style="display:none">
 
   <!-- cam -->
   <p id="errorMessage" style="display:none"></p>
@@ -49,12 +35,9 @@
   var voEnded = false;
   var theDate;
 
-
-  var nickPhoto = document.getElementById ('nickPhoto');
-  var nickY = 350;
   var imageCanvas = document.getElementById ('imageCanvas');
   var imageCanvasContext = imageCanvas.getContext ('2d');
-  var enableNick, nickIsDrawn, nickErase = false;
+
   var drawY = 3;
 
   var isFullscreen = false;
@@ -128,8 +111,6 @@
 
 
   function successCallback(stream) {
-    // window.stream = stream; // make stream available to console
-
     video.src = window.URL.createObjectURL(stream);
     video.play();
 
@@ -164,8 +145,6 @@
 
     scene = new THREE.Scene();
 
-
-
     // texture for 3d - screen
     videoTexture = new THREE.Texture( videoImage);
     videoTexture.minFilter = THREE.LinearFilter;
@@ -176,55 +155,32 @@
     videoTexture.wrapS = videoTexture.wrapT = THREE.ClampToEdgeWrapping;
     videoTexture.needsUpdate = true;
 
-
     movieMaterial = new THREE.MeshBasicMaterial( { map: videoTexture, overdraw: true, side:THREE.DoubleSide } );
     // the geometry on which the movie will be displayed;
     //      movie image will be scaled to fit these dimensions.
     movieGeometry = new THREE.PlaneBufferGeometry( 110, 100, 4, 4 );
     movieScreen = new THREE.Mesh( movieGeometry, movieMaterial );
-    movieScreen.position.set(0,50,0);
-
-
-
 
 
     camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 1, 10000 );
-    camera.position.set(0,50,200);
-    //camera.lookAt(movieScreen.position);
+    camera.position.set(0,0,200);
+
 
     scene = new THREE.Scene();
-    scene.add(movieScreen);
+    scene.add(camera);
+    camera.add(movieScreen);
+    movieScreen.position.set(0,0,-200);
 
     animate ();
   }
 
 
   function animate() {
-
+    camera.rotation.set(alpha* (Math.PI/180),beta* (Math.PI/180),gamma* (Math.PI/180));
     requestAnimationFrame( animate );
-
-    if (!nickIsDrawn) {
-      if (isFullscreen) {
-        nickTime ();
-
-        if (enableNick) {
-          drawNick ();
-        }
-      }
-    }
-
-    if (nickIsDrawn) {
-      eraseNick ();
-      drawNick ();
-    }
-
-
 
     update();
     render();
-    //stats.update();
-
-
 
   }
 
@@ -234,21 +190,6 @@
     // WEB_CAM
     if(video.readyState === video.HAVE_ENOUGH_DATA){
       videoImageContext.drawImage(video, 0,0);
-      videoImageContext.drawImage(nickPhoto, 60, nickY, 200, 200);
-
-      videoImageContext.fillStyle = 'rgb(255,255,255)';
-      videoImageContext.font = "12px helvetica";
-      videoImageContext.fillText(theDate, videoImage.width/3, videoImage.height/3.5);
-      videoImageContext.font = "12px helvetica";
-      videoImageContext.fillText(x, videoImage.width/2.7, videoImage.height/1.25);
-      videoImageContext.fillText(y, videoImage.width/2.7, videoImage.height/1.2);
-      videoImageContext.fillText(z, videoImage.width/2.7, videoImage.height/1.15);
-
-      if (voEnded) {
-        videoImageContext.fillText("Find the voice", videoImage.width/3, videoImage.height/3);
-        videoImageContext.fillText("The screen will change", videoImage.width/3, videoImage.height/2.7);
-        videoImageContext.fillText("As you get closer", videoImage.width/3, videoImage.height/2.4);
-      }
 
       // update texture for 3D
       if(videoTexture){
@@ -270,7 +211,6 @@
     isFullscreen = true;
 
     audio.play ();
-    overText ();
 
     if (!hasPlayed) {
       vo.play();
@@ -293,88 +233,21 @@
 
 
   function ondevicemotion(e) {
-    //setInterval  (function() {
       var tempX = e.acceleration.x;
       var tempY = e.acceleration.y;
       var tempZ = e.acceleration.z;
-/*
-      x = tempX;
-      y = tempY;
-      z = tempZ;
-    }, 300);*/
   };
 
   function onOrientationChange(e) {
-    //setInterval (function() {
-      //var tempAlpha = e.alpha;
+    alpha=e.alpha;
+    beta=e.beta;
+    gamma=e.gamma;
       console.log('alpha '+e.alpha);
-      //var tempBeta = e.beta;
       console.log('beta '+e.beta);
-      //var tempGamma = e.gamma;
       console.log('gamma '+e.gamma);
-
-      //alpha = tempAlpha.toFixed(3);
-
-      //beta = tempBeta.toFixed(3);
-
-      //gamma = tempGamma.toFixed(3);
-
-    //}, 1000);
   };
 
-  function drawNick () {
-    if (nickY>130 && !nickIsDrawn) {
-      nickY = nickY - drawY;
-    } else {
-      nickIsDrawn = true;
-      drawY = -3
-    }
 
-    if (nickErase) {
-      nickY = nickY - drawY;
-    }
-
-    if (nickY >600 && nickErase) {
-      drawY = 0;
-    }
-
-  }
-
-  function nickTime () {
-    setTimeout(function(){
-      enableNick = true;
-    }, 24000);
-  }
-
-  function eraseNick () {
-    setTimeout(function(){
-      nickErase = true;
-    }, 3000);
-  }
-
-
-  function audioStart () {
-    setTimeout(function(){
-      tommy1.play();
-      audio2 ();
-    }, 8000);
-
-  }
-
-  function audio2 () {
-    setTimeout(function(){
-      tommy2.play();
-      //audio2 ();
-    }, 12000);
-  }
-
-  function overText() {
-    setTimeout(function(){
-      voEnded = true;
-      document.getElementById('render-canvas').style.webkitFilter = "sepia(1)";
-    }, 41000);
-
-  }
 
 
   </script>
