@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>mask_template</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+
+    <style>
+
+    #render-canvas {
+      -webkit-filter: hue-rotate(180deg) saturate(8);;
+      filter: hue-rotate(180deg) saturate(8);     
+    }
+      
+    </style>
+  </head>
+  <body>    
+      <script type="text/javascript" src="js/three.min.js"></script>
+
+      <div id="render-canvas" style="border:none">
+
+      <audio id="audio" src="/audio/treefingers.mp3" type="audio/mpeg"> </audio>
+      <audio id="vo" src="/audio/nick-tommy-fullTrack.mp3" type="audio/mpeg"> </audio>
+   
+
+      <img id= "nickPhoto" src="/images/nick-edit.png" height="200" width="200" style="display:none">
+    
+      <!-- cam -->
+      <p id="errorMessage" style="display:none"></p>
+      <video id="video" autoplay loop width="480" height="320" style="display:none"></video>  
+      <canvas id="videoImage" width="480" height="320" style="display:none"></canvas>
+      <canvas id="imageCanvas" width="100" height="100" style="display:none">
+    </div>
+
+      <script type="text/javascript">
+        var video = document.getElementById('video');
+        var videoImage = document.getElementById('videoImage');
+        var videoTexture;
+        var scene, camera, renderer, stats;
+        var videoImageContext;
+        var videoWidth = 480, videoHeight = 320;
+        var container;
+        var movieMaterial, movieGeometry, movieScreen;
+        var imageInfo, data;
+        var videoImageContext = videoImage.getContext('2d');
+        var audio = document.getElementById ('audio');
+        var vo = document.getElementById ('vo');
+        var voEnded = false;
+        var theDate;
+
+
+        var nickPhoto = document.getElementById ('nickPhoto');
+        var nickY = 350;
+        var imageCanvas = document.getElementById ('imageCanvas');
+        var imageCanvasContext = imageCanvas.getContext ('2d');
+        var enableNick, nickIsDrawn, nickErase = false;
+        var drawY = 3;
+
+        var isFullscreen = false;
+       
+        // ref: https://github.com/samdutton/simpl/blob/master/getusermedia/sources/js/main.js
+        var audioSource = null, videoSource = null, camUserID = null, camEnvironmentID = null;
+        var mediaConstraints = {};
+
+        var x, y, z;
+        var alpha, beta, gamma;
+
+        var hasPlayed = false;
+
+        
+        window.addEventListener('click', fullscreen, false);
+        window.addEventListener('devicemotion', ondevicemotion, false);
+        window.addEventListener('deviceorientation', onOrientationChange, false);
+ 
+
+        
+        
+
+        
+        function gotSources(sourceInfos) {
+            for (var i = 0; i !== sourceInfos.length; ++i) {
+                var sourceInfo = sourceInfos[i];
+                if (sourceInfo.kind === 'video') {
+                  if (sourceInfo.facing === 'user') camUserID = sourceInfo.id;
+                  else if (sourceInfo.facing === 'environment') {
+                    camEnvironmentID = sourceInfo.id;
+                    mediaConstraints = {
+                    video: {
+                      mandatory: {
+                          maxWidth: 480,
+                          maxHeight: 320,
+                          minWidth: 480,
+                          minHeight: 320
+                        },
+                      optional: [{sourceId: camEnvironmentID}]
+                    }
+                  };
+                  navigator.getUserMedia(mediaConstraints, successCallback, errorCallback);
+                  }
+                  else {
+                    camEnvironmentID = sourceInfo.id;
+                    mediaConstraints = {
+                    video: {
+                      mandatory: {
+                          maxWidth: 480,
+                          maxHeight: 320,
+                          minWidth: 480,
+                          minHeight: 320
+                        },
+                      optional: [{sourceId: camEnvironmentID}]
+                    }
+                  };
+                  navigator.getUserMedia(mediaConstraints, successCallback, errorCallback);
+                  }
+                } 
+            }
+          }
+
+            // for selecting back camera of phone
+            if (typeof MediaStreamTrack.getSources === 'undefined'){
+              alert('This browser does not support MediaStreamTrack.\n\nTry Chrome Canary.');
+            } else {
+              MediaStreamTrack.getSources(gotSources);
+            }
+            navigator.getUserMedia = navigator.getUserMedia || 
+              navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+          
+          
+
+          function successCallback(stream) {
+            // window.stream = stream; // make stream available to console
+
+            video.src = window.URL.createObjectURL(stream);
+            video.play();
+
+            init ();         
+        }
+
+
+        function errorCallback(error){
+          var msg = 'No camera available.';
+          if (error.code == 1) 
+          {   msg = 'User denied access to use camera.';   }
+          document.getElementById('errorMessage').textContent = msg;
+          console.log('navigator.getUserMedia error: ', error);
+        }
+
+        function init () {
+ 
+            container = document.getElementById('render-canvas'); 
+
+            renderer = new THREE.WebGLRenderer({
+              antialias: true, 
+              alpha: true
+            });
+            renderer.setClearColor(0x000000);
+            renderer.autoClear = false;
+            container.appendChild(renderer.domElement);     
+
+            effect = new THREE.StereoEffect( renderer );
+            effect.separation = 0.2;
+            effect.targetDistance = 50;
+            effect.setSize( window.innerWidth, window.innerHeight );  
+
+            scene = new THREE.Scene(); 
+
+    
+
+            // texture for 3d - screen
+            videoTexture = new THREE.Texture( videoImage);
+            videoTexture.minFilter = THREE.LinearFilter;
+            videoTexture.magFilter = THREE.LinearFilter;
+            videoTexture.format = THREE.RGBFormat;
+            videoTexture.generateMipmaps = false;
+
+            videoTexture.wrapS = videoTexture.wrapT = THREE.ClampToEdgeWrapping;
+            videoTexture.needsUpdate = true;
+
+            
+            movieMaterial = new THREE.MeshBasicMaterial( { map: videoTexture, overdraw: true, side:THREE.DoubleSide } );
+            // the geometry on which the movie will be displayed;
+            //      movie image will be scaled to fit these dimensions.
+            movieGeometry = new THREE.PlaneBufferGeometry( 110, 100, 4, 4 );
+            movieScreen = new THREE.Mesh( movieGeometry, movieMaterial );
+            movieScreen.position.set(0,50,0);
+
+
+
+            
+
+            camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 1, 10000 );
+            camera.position.set(0,50,200);
+            //camera.lookAt(movieScreen.position);
+
+            scene = new THREE.Scene();
+            scene.add(movieScreen);
+
+            animate ();
+        }
+
+
+            function animate() {
+       
+              requestAnimationFrame( animate );
+
+              if (!nickIsDrawn) {             
+                if (isFullscreen) {
+                  nickTime ();
+
+                  if (enableNick) {
+                    drawNick ();
+                  }
+                }
+              }
+
+              if (nickIsDrawn) {             
+                eraseNick ();
+                drawNick ();   
+              }
+
+
+
+              update();
+              render();
+              //stats.update();
+              
+              
+
+            }
+
+    
+            function update() { 
+  
+              // WEB_CAM
+                if(video.readyState === video.HAVE_ENOUGH_DATA){
+                  videoImageContext.drawImage(video, 0,0);
+                  videoImageContext.drawImage(nickPhoto, 60, nickY, 200, 200);
+                  
+                  videoImageContext.fillStyle = 'rgb(255,255,255)';
+                  videoImageContext.font = "12px helvetica";
+                  videoImageContext.fillText(theDate, videoImage.width/3, videoImage.height/3.5);
+                  videoImageContext.font = "12px helvetica";
+                  videoImageContext.fillText(x, videoImage.width/2.7, videoImage.height/1.25);
+                  videoImageContext.fillText(y, videoImage.width/2.7, videoImage.height/1.2);
+                  videoImageContext.fillText(z, videoImage.width/2.7, videoImage.height/1.15);
+
+                  //videoImageContext.fillText(alpha, videoImage.width/1.9, videoImage.height/1.25);
+                  //videoImageContext.fillText(beta, videoImage.width/1.9, videoImage.height/1.2);
+                  //videoImageContext.fillText(gamma, videoImage.width/1.9, videoImage.height/1.15);
+
+                  if (voEnded) {
+                    videoImageContext.fillText("Find the voice", videoImage.width/3, videoImage.height/3);
+                    videoImageContext.fillText("The screen will change", videoImage.width/3, videoImage.height/2.7);
+                    videoImageContext.fillText("As you get closer", videoImage.width/3, videoImage.height/2.4);
+                  }
+                  
+                  
+                        // update texture for 3D
+                  if(videoTexture){
+                    videoTexture.flipY = true;
+                    videoTexture.needsUpdate = true;
+                  }
+
+                }
+
+                //get Date
+                var tempDate = new Date();
+                
+                theDate = tempDate.toUTCString();
+
+            }
+
+
+            function render() {
+              effect.render( scene, camera );
+            }
+
+
+
+            function fullscreen() {
+                isFullscreen = true;
+
+                audio.play ();
+                overText ();
+
+                
+                if (!hasPlayed) {
+                  vo.play();
+                  hasPlayed = true;
+                }
+
+              if (container.requestFullscreen) {
+                container.requestFullscreen();
+              } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
+              } else if (container.mozRequestFullScreen) {
+                container.mozRequestFullScreen();
+              } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+              }
+
+              audioStart ();
+
+            }
+
+
+            function ondevicemotion(e) {
+              setInterval  (function() {
+                var tempX = e.acceleration.x;
+                var tempY = e.acceleration.y;
+                var tempZ = e.acceleration.z;
+
+                x = tempX.toFixed(3);
+                y = tempY.toFixed(3);
+                z = tempZ.toFixed(3);
+              }, 300);
+            }
+
+            function onOrientationChange(e) {
+              setInterval (function() {
+                var tempAlpha = e.alpha;
+                var tempBeta = e.beta;
+                var tempGamma = e.gamma;
+
+                alpha = tempAlpha.toFixed(3);
+                beta = tempBeta.toFixed(3);
+                gamma = tempGamma.toFixed(3);
+              }, 300);
+            }
+
+            function drawNick () {
+
+              if (nickY>130 && !nickIsDrawn) {
+                nickY = nickY - drawY;
+              } else {
+                nickIsDrawn = true;
+                drawY = -3               
+              }
+
+              if (nickErase) {
+                nickY = nickY - drawY;
+              }
+
+              if (nickY >600 && nickErase) {
+                drawY = 0;
+              }
+
+            }
+
+            function nickTime () {
+              setTimeout(function(){ 
+                enableNick = true;
+              }, 24000);
+
+            }
+
+            function eraseNick () {
+              setTimeout(function(){ 
+                nickErase = true;
+              }, 3000);
+
+            }
+
+
+            function audioStart () {
+               setTimeout(function(){ 
+                 tommy1.play();
+                 audio2 ();
+               }, 8000);
+
+            }
+
+            function audio2 () {
+              setTimeout(function(){ 
+                tommy2.play();
+                //audio2 ();
+              }, 12000);
+            } 
+
+            function overText() {
+               setTimeout(function(){ 
+                voEnded = true;
+                document.getElementById('render-canvas').style.webkitFilter = "sepia(1)";
+               }, 41000);
+
+            }
+   
+    
+      </script>
+      
+
+      <script src="js/StereoEffect.js"></script>
+      <!-- <script src="js/controls/DeviceControls.js"></script> -->
+      <script type="text/javascript" src="js/Detector.js"></script>
+      <script type="text/javascript" src="js/CanvasRenderer.js"></script>
+      <script type="text/javascript" src="js/Projector.js"></script>
+      <!-- <script type="text/javascript" src="js/lib/tween.min.js"></script> -->
+      <script type="text/javascript" src="js/stats.min.js"></script>
+  </body>
+</html>
