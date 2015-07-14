@@ -1,4 +1,4 @@
-# threejs
+# AR/VR for threejs
 
 A barebones threejs app for AR/VR using [Express 4](http://expressjs.com/).
 
