@@ -9,6 +9,11 @@
 </head>
 <body>
 <script type="text/javascript" src="js/three.min.js"></script>
+<script src="js/StereoEffect.js"></script>
+<script type="text/javascript" src="js/Detector.js"></script>
+<script type="text/javascript" src="js/CanvasRenderer.js"></script>
+<script type="text/javascript" src="js/Projector.js"></script>
+<script type="text/javascript" src="js/stats.min.js"></script>
 
 <div id="render-canvas" style="border:none">
 
@@ -56,8 +61,7 @@
   var hasPlayed = false;
   var cube;
 
-
-  window.addEventListener('click', fullscreen, false);
+  window.addEventListener('click', fullscreen, true);
   window.addEventListener('devicemotion', ondevicemotion, false);
   window.addEventListener('deviceorientation', onOrientationChange, false);
 
@@ -162,15 +166,14 @@
     movieGeometry = new THREE.PlaneBufferGeometry( 110, 100, 4, 4 );
     movieScreen = new THREE.Mesh( movieGeometry, movieMaterial );
 
-
     camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.set(0,0,200);
-
 
     scene = new THREE.Scene();
     scene.add(camera);
     camera.add(movieScreen);
     movieScreen.position.set(0,0,-400);
+    movieScreen.scale.set(2,2,2);
 
     var geometry = new THREE.BoxGeometry( 10, 10, 10 );
     var material = new THREE.MeshLambertMaterial( {color: 0x88ff00} );
@@ -182,14 +185,11 @@
     light.position.set( 0, 10, 200 );
     scene.add( light );
 
-
-
     animate ();
   }
 
-
   function animate() {
-    camera.rotation.set(-beta* (Math.PI/180),-gamma* (Math.PI/180),0);
+    camera.rotation.set(-gamma* (Math.PI/180),beta* (Math.PI/180),0);
     requestAnimationFrame( animate );
     cube.rotateX(.01);
     cube.rotateY(.01);
@@ -198,9 +198,7 @@
     render();
   }
 
-
   function update() {
-
     // WEB_CAM
     if(video.readyState === video.HAVE_ENOUGH_DATA){
       videoImageContext.drawImage(video, 0,0);
@@ -224,13 +222,6 @@
   function fullscreen() {
     isFullscreen = true;
 
-    audio.play ();
-
-    if (!hasPlayed) {
-      vo.play();
-      hasPlayed = true;
-    }
-
     if (container.requestFullscreen) {
       container.requestFullscreen();
     } else if (container.msRequestFullscreen) {
@@ -240,11 +231,7 @@
     } else if (container.webkitRequestFullscreen) {
       container.webkitRequestFullscreen();
     }
-
-    audioStart ();
-
   }
-
 
   function ondevicemotion(e) {
       var tempX = e.acceleration.x;
@@ -253,26 +240,17 @@
   };
 
   function onOrientationChange(e) {
-    alpha=e.alpha;
-    beta=e.beta;
-    gamma=e.gamma;
-      console.log('alpha '+e.alpha);
-      console.log('beta '+e.beta);
-      console.log('gamma '+e.gamma);
+    if(window.orientation<=0){
+      alpha=-e.alpha;
+      beta=-e.beta;
+      gamma=-e.gamma;
+    }else{
+      alpha=e.alpha;
+      beta=e.beta;
+      gamma=e.gamma;
+    }
   };
-
-
-
-
   </script>
 
-
-  <script src="js/StereoEffect.js"></script>
-  <!-- <script src="js/controls/DeviceControls.js"></script> -->
-  <script type="text/javascript" src="js/Detector.js"></script>
-  <script type="text/javascript" src="js/CanvasRenderer.js"></script>
-  <script type="text/javascript" src="js/Projector.js"></script>
-  <!-- <script type="text/javascript" src="js/lib/tween.min.js"></script> -->
-  <script type="text/javascript" src="js/stats.min.js"></script>
 </body>
 </html>
