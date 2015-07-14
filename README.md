@@ -1,6 +1,6 @@
 # AR/VR for threejs
 
-A barebones threejs app for AR/VR using [Express 4](http://expressjs.com/).
+A barebones threejs app for AR/VR running on [node](http://nodejs.org) with an [Express 4](http://expressjs.com/) server.
 
 ## Running Locally
 
