@@ -1,12 +1,12 @@
 {
-  "name": "itp-static",
+  "name": "three.js ar/vr template",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Shaun Axani <saxani@gmail.com> (http://shaunaxani.com/)",
+  "author": "Will Field <willjfield@gmail.com> (http://willjfield.com/) Shaun Axani <saxani@gmail.com> (http://shaunaxani.com/)",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.5.3",
