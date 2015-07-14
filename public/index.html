@@ -13,6 +13,7 @@
 <script type="text/javascript" src="js/CanvasRenderer.js"></script>
 <script type="text/javascript" src="js/Projector.js"></script>
 <script type="text/javascript" src="js/stats.min.js"></script>
+<script src="/js/DeviceOrientationController.js"></script>
 
 <div id="render-canvas" style="border:none">
 
@@ -27,7 +28,7 @@
   var video = document.getElementById('video');
   var videoImage = document.getElementById('videoImage');
   var videoTexture;
-  var scene, camera, renderer, stats;
+  var scene, camera, renderer, stats, controls;
   var videoImageContext;
   var videoWidth = 480, videoHeight = 320;
   var container;
@@ -51,6 +52,9 @@
   var alpha=0;
   var beta=0;
   var gamma=0;
+
+  var mRot = new THREE.Matrix4();
+  var oriQuat = new THREE.Quaternion();
 
   var hasPlayed = false;
   var cube;
@@ -137,6 +141,8 @@
     renderer.autoClear = false;
     container.appendChild(renderer.domElement);
 
+
+
     effect = new THREE.StereoEffect( renderer );
     effect.separation = 0.2;
     effect.targetDistance = 50;
@@ -162,28 +168,67 @@
 
     camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.set(0,0,200);
+    camera.useQuaternion=true;
+    camera.matrixAutoUpdate = false;
 
     scene = new THREE.Scene();
     scene.add(camera);
     camera.add(movieScreen);
-    movieScreen.position.set(0,0,-400);
-    movieScreen.scale.set(1.75,1.75,1.75);
+    movieScreen.position.set(0,0,-800);
+    movieScreen.scale.set(3.5,3.5,3.5);
+    //movieScreen.renderDepth=1;
 
-    var geometry = new THREE.BoxGeometry( 10, 10, 10 );
+    var geometry = new THREE.BoxGeometry( 20, 20, 20 );
     var material = new THREE.MeshLambertMaterial( {color: 0x88ff00} );
-    cube = new THREE.Mesh( geometry, material );
 
+    cube = new THREE.Mesh( geometry, material );
     scene.add( cube );
-    cube.position.set(0,0,-100);
+    cube.position.set(0,0,-500);
+
+    cube2 = new THREE.Mesh( geometry, material );
+    scene.add( cube2 );
+    cube2.position.set(0,0,500);
+
+    cube3 = new THREE.Mesh( geometry, material );
+    scene.add( cube3 );
+    cube3.position.set(0,-500,0);
+
+    cube4 = new THREE.Mesh( geometry, material );
+    scene.add( cube4 );
+    cube4.position.set(0,500,0);
+
+    cube5 = new THREE.Mesh( geometry, material );
+    scene.add( cube5 );
+    cube5.position.set(-500,0,0);
+
+    cube6 = new THREE.Mesh( geometry, material );
+    scene.add( cube6 );
+    cube6.position.set(500,0,0);
+
+
     var light = new THREE.PointLight( 0xffffff );
     light.position.set( 0, 10, 200 );
     scene.add( light );
-
+    //controls = new DeviceOrientationController( camera, renderer.domElement );
+    //controls.connect();
     animate ();
   }
 
   function animate() {
-    camera.rotation.set(-gamma* (Math.PI/180),beta* (Math.PI/180),0);
+    //camera.rotation.z=alpha* (Math.PI/180);
+    //camera.rotation.set(-gamma* (Math.PI/180),beta* (Math.PI/180),0);
+
+    //var rotAngle = new THREE.Euler( alpha* (Math.PI/180),beta* (Math.PI/180),gamma* (Math.PI/180), 'XYZ' );
+    //mRot.makeRotationFromEuler(rotAngle);
+    //camera.rotation.setFromRotationMatrix(mRot);
+
+    oriQuat.set( alpha* (Math.PI/180),beta* (Math.PI/180),gamma* (Math.PI/180) , Math.PI / 2 );
+    camera.matrix.makeRotationFromQuaternion(oriQuat);
+    camera.matrixAutoUpdate = false;
+
+    //camera.quaternion=oriQuat;
+    //camera.updateMatrix();
+
     requestAnimationFrame( animate );
     cube.rotateX(.01);
     cube.rotateY(.01);
@@ -234,15 +279,9 @@
   };
 
   function onOrientationChange(e) {
-    if(window.orientation<=0){
-      alpha=-e.alpha;
-      beta=-e.beta;
-      gamma=-e.gamma;
-    }else{
-      alpha=e.alpha;
-      beta=e.beta;
-      gamma=e.gamma;
-    }
+    alpha=e.alpha;
+   beta=e.beta;
+   gamma=e.gamma;
   };
   </script>
 
