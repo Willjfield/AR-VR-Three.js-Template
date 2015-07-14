@@ -34,15 +34,10 @@
   var movieMaterial, movieGeometry, movieScreen;
   var imageInfo, data;
   var videoImageContext = videoImage.getContext('2d');
-  var audio = document.getElementById ('audio');
-  var vo = document.getElementById ('vo');
-  var voEnded = false;
   var theDate;
 
   var imageCanvas = document.getElementById ('imageCanvas');
   var imageCanvasContext = imageCanvas.getContext ('2d');
-
-  var drawY = 3;
 
   var isFullscreen = false;
 
@@ -172,7 +167,7 @@
     scene.add(camera);
     camera.add(movieScreen);
     movieScreen.position.set(0,0,-400);
-    movieScreen.scale.set(2,2,2);
+    movieScreen.scale.set(1.75,1.75,1.75);
 
     var geometry = new THREE.BoxGeometry( 10, 10, 10 );
     var material = new THREE.MeshLambertMaterial( {color: 0x88ff00} );
