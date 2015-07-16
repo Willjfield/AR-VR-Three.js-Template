@@ -1,7 +1,0 @@
-{
-  "name": "AR/VR for Three.js",
-  "description": "A barebones AR/VR setup for Three.js",
-  "repository": "https://github.com/Willjfield/AR-VR-Three.js-Template",
-  "logo": "http://node-js-sample.herokuapp.com/node.svg",
-  "keywords": ["node", "express", "static", "threejs", "augmented reality", "virtual reality"]
-}
