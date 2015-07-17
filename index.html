@@ -39,10 +39,8 @@
     </style>
   </head>
   <body>
-      <!--<iframe class="left" src="camera/camera.html"></iframe>
-      <iframe class="right" src="camera/camera.html"></iframe>-->
-      <iframe class="left" src="old_camframe.html"></iframe>
-      <iframe class="right" src="old_camframe.html"></iframe>
+    <iframe class="left" src="camera/cameraiframe.html"></iframe>
+      <iframe class="right" src="camera/cameraiframe.html"></iframe>
     <div id="webglviewer">
 
       <p id="errorMessage" style="display:none"></p>
@@ -69,15 +67,6 @@
           controls,
           clock,
 
-          // Particles
-          particles = new THREE.Object3D(),
-          totalParticles = 200,
-          maxParticleSize = 200,
-          particleRotationSpeed = 0,
-          particleRotationDeg = 0,
-          lastColorRange = [0, 0.3],
-          currentColorRange = [0, 0.3],
-
           // City and weather API set up
           cities = [['Sydney', '2147714'], ['New York', '5128638'], ['Tokyo', '1850147'], ['London', '2643743'], ['Mexico City', '3530597'], ['Miami', '4164138'], ['San Francisco', '5391959'], ['Rome', '3169070']],
           cityWeather = {},
@@ -103,7 +92,7 @@
 
     var isFullscreen = false;
 
-var hasPlayed = false;
+    var hasPlayed = false;
 
     // ref: https://github.com/samdutton/simpl/blob/master/getusermedia/sources/js/main.js
     var audioSource = null, videoSource = null, camUserID = null, camEnvironmentID = null;
@@ -160,8 +149,6 @@ var hasPlayed = false;
       navigator.getUserMedia = navigator.getUserMedia ||
       navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-
-
       function successCallback(stream) {
         video.src = window.URL.createObjectURL(stream);
         video.play();
@@ -182,32 +169,13 @@ var hasPlayed = false;
         console.log('navigator.getUserMedia error: ', error);
       }
 
-      //init();
-
       function init() {
-        // texture for 3d - screen
-  videoTexture = new THREE.Texture( videoImage);
-  videoTexture.minFilter = THREE.LinearFilter;
-  videoTexture.magFilter = THREE.LinearFilter;
-  videoTexture.format = THREE.RGBFormat;
-  videoTexture.generateMipmaps = false;
-
-  videoTexture.wrapS = videoTexture.wrapT = THREE.ClampToEdgeWrapping;
-  videoTexture.needsUpdate = true;
-
-  movieMaterial = new THREE.MeshBasicMaterial( { map: videoTexture, overdraw: true, side:THREE.DoubleSide } );
-  // the geometry on which the movie will be displayed;
-  //      movie image will be scaled to fit these dimensions.
-  movieGeometry = new THREE.PlaneBufferGeometry( 110, 100, 4, 4 );
-  movieScreen = new THREE.Mesh( movieGeometry, movieMaterial );
 
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.001, 700);
+        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 700);
         camera.position.set(0, 15, 0);
         scene.add(camera);
-        camera.add(movieScreen);
-          movieScreen.position.set(0,0,-800);
-          movieScreen.scale.set(3.5,3.5,3.5);
+
         renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setClearColor( 0x000000, 0 ); // the default
         element = renderer.domElement;
@@ -219,7 +187,7 @@ var hasPlayed = false;
         // Our initial control fallback with mouse/touch events in case DeviceOrientation is not enabled
         controls = new THREE.OrbitControls(camera, element);
         controls.target.set(
-          camera.position.x + 0.15,
+          camera.position.x,
           camera.position.y,
           camera.position.z
         );
@@ -251,46 +219,6 @@ var hasPlayed = false;
         lightScene.position.set(0, 5, 0);
         scene.add(lightScene);
 
-        var floorTexture = THREE.ImageUtils.loadTexture('textures/wood.jpg');
-        floorTexture.wrapS = THREE.RepeatWrapping;
-        floorTexture.wrapT = THREE.RepeatWrapping;
-        floorTexture.repeat = new THREE.Vector2(50, 50);
-        floorTexture.anisotropy = renderer.getMaxAnisotropy();
-
-        var floorMaterial = new THREE.MeshPhongMaterial({
-          color: 0xffffff,
-          specular: 0xffffff,
-          shininess: 20,
-          shading: THREE.FlatShading,
-          map: floorTexture
-        });
-
-        var geometry = new THREE.PlaneBufferGeometry(1000, 1000);
-
-        var floor = new THREE.Mesh(geometry, floorMaterial);
-        floor.rotation.x = -Math.PI / 2;
-        //scene.add(floor);
-
-        var particleTexture = THREE.ImageUtils.loadTexture('textures/particle.png'),
-            spriteMaterial = new THREE.SpriteMaterial({
-            map: particleTexture,
-            color: 0xffffff
-          });
-
-        for (var i = 0; i < totalParticles; i++) {
-          var sprite = new THREE.Sprite(spriteMaterial);
-
-          sprite.scale.set(64, 64, 1.0);
-          sprite.position.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.75);
-          sprite.position.setLength(maxParticleSize * Math.random());
-
-          sprite.material.blending = THREE.AdditiveBlending;
-
-          particles.add(sprite);
-        }
-        particles.position.y = 70;
-        //scene.add(particles);
-
         adjustToWeatherConditions();
 
         clock = new THREE.Clock();
@@ -320,7 +248,6 @@ var hasPlayed = false;
             lng: cityWeather[t].coord.lon
         }, function(timeZone){
             cityTimes.push(new Date(timeZone.timestamp * 1000));
-
             t++;
             if (t < len) lookupTimezones(t, len);
             else applyWeatherConditions();
@@ -330,40 +257,10 @@ var hasPlayed = false;
       function applyWeatherConditions() {
         displayCurrentCityName(cities[currentCity][0]);
 
-        var info = cityWeather[currentCity];
-
-        particleRotationSpeed = info.wind.speed / 2; // dividing by 2 just to slow things down
-        particleRotationDeg = info.wind.deg;
-
-        var timeThere = cityTimes[currentCity] ? cityTimes[currentCity].getUTCHours() : 0,
-            isDay = timeThere >= 6 && timeThere <= 18;
-
-        if (isDay) {
-          switch (info.weather[0].main) {
-            case 'Clouds':
-              currentColorRange = [0, 0.01];
-              break;
-            case 'Rain':
-              currentColorRange = [0.7, 0.1];
-              break;
-            case 'Clear':
-            default:
-              currentColorRange = [0.6, 0.7];
-              break;
-          }
-        } else {
-          currentColorRange = [0.69, 0.6];
-        }
-
-        if (currentCity < cities.length-1) currentCity++;
-        else currentCity = 0;
-
         setTimeout(applyWeatherConditions, 5000);
       }
 
       function displayCurrentCityName(name) {
-        scene.remove(currentCityTextMesh);
-
         currentCityText = new THREE.TextGeometry(name, {
           size: 4,
           height: 1
@@ -381,21 +278,6 @@ var hasPlayed = false;
       }
 
       function animate() {
-        var elapsedSeconds = clock.getElapsedTime(),
-            particleRotationDirection = particleRotationDeg <= 180 ? -1 : 1;
-
-        particles.rotation.y = elapsedSeconds * particleRotationSpeed * particleRotationDirection;
-
-        // We check if the color range has changed, if so, we'll change the colours
-        if (lastColorRange[0] != currentColorRange[0] && lastColorRange[1] != currentColorRange[1]) {
-
-          for (var i = 0; i < totalParticles; i++) {
-            particles.children[i].material.color.setHSL(currentColorRange[0], currentColorRange[1], (Math.random() * (0.7 - 0.2) + 0.2));
-          }
-
-          lastColorRange = currentColorRange;
-        }
-
         requestAnimationFrame(animate);
 
         update(clock.getDelta());
