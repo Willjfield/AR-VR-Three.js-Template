@@ -1,10 +1,7 @@
-<!--======================================================================-->
-<!-- THIS SHOULD WORK BUT THE VIDEO JUST DOESNT SHOW UP. NO ERRORS THOUGH -->
-<!--======================================================================-->
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Connecting up Google Cardboard to web APIs</title>
+    <title>VR/AR Template using three.js</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
@@ -22,27 +19,48 @@
       }
       .left{
         position: absolute;
+
+        z-index: -999;
+        width:50%;
+        height:100%;
+
+        float:left;
+        border:none;
+        background: #000000;
+        /*
+
         top:0px;
         left:0px;
-        width:50%;
         height: 100%;
-        border:none;
+
+        */
       }
       .right{
         position: absolute;
+
+        z-index: -999;
+        width:50%;
+        height:100%;
+
+        right:0px;
+        border:none;
+        background: #000000;
+        /*
+          top:0px;
+        position: absolute;
         top:0px;
         left:50%;
-        width:50%;
         height: 100%;
-        border:none;
+
+        */
       }
     </style>
   </head>
   <body>
-    <iframe class="left" src="camera/cameraiframe.html"></iframe>
-      <iframe class="right" src="camera/cameraiframe.html"></iframe>
-    <div id="webglviewer">
 
+    <div id="webglviewer">
+      <iframe class="left" src="camera/cameraiframe.html"></iframe>
+      <iframe class="right" src="camera/cameraiframe.html"></iframe>
       <p id="errorMessage" style="display:none"></p>
       <video id="video" autoplay loop width="480" height="320" style="display:none"></video>
       <canvas id="videoImage" width="480" height="320" style="display:none"></canvas>
@@ -172,7 +190,7 @@
       function init() {
 
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 700);
+        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.001, 700);
         camera.position.set(0, 15, 0);
         scene.add(camera);
 
@@ -219,62 +237,15 @@
         lightScene.position.set(0, 5, 0);
         scene.add(lightScene);
 
-        adjustToWeatherConditions();
+        var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+var cube = new THREE.Mesh( geometry, material );
+cube.position.set(0,10,20);
+scene.add( cube );
 
         clock = new THREE.Clock();
 
         animate();
-      }
-
-      function adjustToWeatherConditions() {
-        var cityIDs = '';
-        for (var i = 0; i < cities.length; i++) {
-          cityIDs += cities[i][1];
-          if (i != cities.length - 1) cityIDs += ',';
-        }
-        getURL('http://api.openweathermap.org/data/2.5/group?id=' + cityIDs + '&APPID=b5c0b505a8746a1b2cc6b17cdab34535', function(info) {
-          cityWeather = info.list;
-
-          lookupTimezones(0, cityWeather.length);
-        });
-      }
-
-      function lookupTimezones(t, len) {
-        var tz = new TimeZoneDB;
-
-        tz.getJSON({
-            key: "GPH4A5Q6NGI1",
-            lat: cityWeather[t].coord.lat,
-            lng: cityWeather[t].coord.lon
-        }, function(timeZone){
-            cityTimes.push(new Date(timeZone.timestamp * 1000));
-            t++;
-            if (t < len) lookupTimezones(t, len);
-            else applyWeatherConditions();
-        });
-      }
-
-      function applyWeatherConditions() {
-        displayCurrentCityName(cities[currentCity][0]);
-
-        setTimeout(applyWeatherConditions, 5000);
-      }
-
-      function displayCurrentCityName(name) {
-        currentCityText = new THREE.TextGeometry(name, {
-          size: 4,
-          height: 1
-        });
-        currentCityTextMesh = new THREE.Mesh(currentCityText, new THREE.MeshBasicMaterial({
-          color: 0xffffff, opacity: 1
-        }));
-
-        currentCityTextMesh.position.y = 10;
-        currentCityTextMesh.position.z = 20;
-        currentCityTextMesh.rotation.x = 0;
-        currentCityTextMesh.rotation.y = -180;
-
-        scene.add(currentCityTextMesh);
       }
 
       function animate() {
@@ -319,23 +290,6 @@
         }
       }
 
-      function getURL(url, callback) {
-        var xmlhttp = new XMLHttpRequest();
-
-        xmlhttp.onreadystatechange = function() {
-          if (xmlhttp.readyState == 4) {
-             if (xmlhttp.status == 200){
-                 callback(JSON.parse(xmlhttp.responseText));
-             }
-             else {
-                 console.log('We had an error, status code: ', xmlhttp.status);
-             }
-          }
-        }
-
-        xmlhttp.open('GET', url, true);
-        xmlhttp.send();
-      }
     </script>
 
   </body>
